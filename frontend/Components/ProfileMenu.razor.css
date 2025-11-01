@@ -3,6 +3,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    height: 100%;
 }
 
 .profile-button {
@@ -29,15 +30,15 @@
 
 .profile-dropdown {
     position: absolute;
-    top: calc(100% + 10px);
+    top: 100%;
     right: 0;
     min-width: 190px;
+    margin: 0;
+    padding: 0.4rem 0;
     background: var(--nw-surface);
     border: 1px solid var(--nw-border);
-    border-radius: 12px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
-    padding: 0.35rem 0;
-    margin: 0;
+    border-radius: 0.75rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .32);
     list-style: none;
     z-index: 1010;
 }
@@ -48,19 +49,23 @@
 
 .profile-dropdown li button {
     width: 100%;
-    background: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--nw-surface);
     border: none;
     color: var(--nw-text);
     text-align: left;
-    padding: 0.6rem 1.1rem;
+    padding: 0.65rem 1.1rem;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: color .15s ease;
+    transition: background .18s ease, color .18s ease;
 }
 
 .profile-dropdown li button:hover,
 .profile-dropdown li button:focus-visible {
     color: var(--nw-accent);
+    background: rgba(110, 168, 254, 0.12);
     outline: none;
 }
 

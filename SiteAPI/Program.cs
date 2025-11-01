@@ -1,4 +1,5 @@
 using System.Text;
+using AuthApi;
 using AuthApi.Data;
 using AuthApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -45,6 +46,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwt["Audience"],
             IssuerSigningKey = signingKey,
             ClockSkew = TimeSpan.Zero
+        };
+
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue(AuthConstants.AuthCookieName, out var token) &&
+                    !string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -105,7 +120,7 @@ app.UseSwaggerUI();    // serves interactive UI at /swagger
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-// These two lines make the API serve the Client’s static web assets
+// These two lines make the API serve the Clients static web assets
 app.UseBlazorFrameworkFiles();   // serves _framework from the Client project
 app.UseStaticFiles();            // serves wwwroot (images, css, etc.)
 

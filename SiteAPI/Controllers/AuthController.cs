@@ -1,4 +1,8 @@
-﻿using AuthApi.Data;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using AuthApi;
+using Microsoft.AspNetCore.Http;
+using AuthApi.Data;
 using AuthApi.Services;
 using Contracts.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -56,11 +60,27 @@ public class AuthController : ControllerBase
 
         var token = await _jwt.CreateTokenAsync(user);
         var roles = (await _users.GetRolesAsync(user)).ToArray();
+
+        SetAuthCookie(token);
         return Ok(new AuthResponse(token, "Bearer", roles));
     }
 
-    private void SetAuthCookie(string cookie)
+    private void SetAuthCookie(string token)
     {
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        var expires = jwt.ValidTo == DateTime.MinValue
+            ? (DateTimeOffset?)null
+            : new DateTimeOffset(DateTime.SpecifyKind(jwt.ValidTo, DateTimeKind.Utc));
 
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Strict,
+            Path = "/",
+            Expires = expires
+        };
+
+        Response.Cookies.Append(AuthConstants.AuthCookieName, token, options);
     }
 }

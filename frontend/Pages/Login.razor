@@ -1,14 +1,50 @@
-﻿@page "/login"
+@page "/login"
+@using Contracts.Auth
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject frontend.Services.AuthService Auth
 
 <AuthCard Kind="AuthCard.AuthKind.Login"
           Title="Login"
           ButtonText="Submit"
           OnSubmit="SubmitLogin" />
 
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <p class="auth-error">@_errorMessage</p>
+}
+
 @code {
-    private async Task SubmitLogin(AuthCard.AuthCardModel m)
+    private string? _errorMessage;
+
+    private async Task SubmitLogin(AuthCard.AuthCardModel model)
     {
-        Console.WriteLine($"Login: email={m.Email}, pwLen={m.Password?.Length}");
-        await Task.CompletedTask;
+        _errorMessage = null;
+
+        var response = await Http.PostAsJsonAsync("api/auth/login", new LoginDto
+        {
+            Email = model.Email,
+            Password = model.Password
+        });
+
+        if (response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (body is not null)
+            {
+                await Auth.SignInAsync(body);
+                Nav.NavigateTo("/");
+                return;
+            }
+
+            _errorMessage = "Unable to sign in. Please try again.";
+            return;
+        }
+
+        _errorMessage = response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.Unauthorized => "Invalid email or password.",
+            _ => "Unable to sign in. Please try again."
+        };
     }
 }

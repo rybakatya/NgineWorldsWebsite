@@ -17,7 +17,25 @@
     padding: .65rem 1rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
+    overflow: visible;
+}
+
+.nw-primary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    overflow: visible;
+}
+
+.nw-profile-slot {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
     overflow: visible;
 }
 
@@ -36,6 +54,7 @@
     align-items: center;
     justify-content: space-between;
     flex: 1 1 auto;
+    min-width: 0;
     overflow: visible;
 }
 

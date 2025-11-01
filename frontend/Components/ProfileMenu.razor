@@ -7,28 +7,15 @@
             class="profile-button"
             @onclick="ToggleMenu"
             aria-haspopup="menu"
-            aria-expanded="@_isOpen"
-            aria-label="Profile menu">
+            aria-expanded="@_isOpen">
+        <span class="sr-only">Open profile menu</span>
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="8" r="4.25" stroke="currentColor" stroke-width="1.6" />
             <path d="M5 19.5c1.3-3 3.7-4.5 7-4.5s5.7 1.5 7 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
         </svg>
     </button>
 
-    @if (_isOpen)
-    {
-        <ul class="profile-dropdown" role="menu">
-            <li>
-                <button type="button" role="menuitem" @onclick="NavigateToAccount">Account</button>
-            </li>
-            <li>
-                <button type="button" role="menuitem" @onclick="NavigateToSettings">Site Settings</button>
-            </li>
-            <li>
-                <button type="button" role="menuitem" @onclick="SignOutAsync">Log Out</button>
-            </li>
-        </ul>
-    }
+    @_isOpen ? RenderDropdown() : null
 </div>
 
 @code {
@@ -49,6 +36,42 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private RenderFragment RenderDropdown() => builder =>
+    {
+        builder.OpenElement(0, "ul");
+        builder.AddAttribute(1, "class", "profile-dropdown");
+        builder.AddAttribute(2, "role", "menu");
+
+        builder.OpenElement(3, "li");
+        builder.OpenElement(4, "button");
+        builder.AddAttribute(5, "type", "button");
+        builder.AddAttribute(6, "role", "menuitem");
+        builder.AddAttribute(7, "onclick", EventCallback.Factory.Create(this, () => NavigateTo("/account")));
+        builder.AddContent(8, "Account");
+        builder.CloseElement();
+        builder.CloseElement();
+
+        builder.OpenElement(9, "li");
+        builder.OpenElement(10, "button");
+        builder.AddAttribute(11, "type", "button");
+        builder.AddAttribute(12, "role", "menuitem");
+        builder.AddAttribute(13, "onclick", EventCallback.Factory.Create(this, () => NavigateTo("/settings")));
+        builder.AddContent(14, "Site Settings");
+        builder.CloseElement();
+        builder.CloseElement();
+
+        builder.OpenElement(15, "li");
+        builder.OpenElement(16, "button");
+        builder.AddAttribute(17, "type", "button");
+        builder.AddAttribute(18, "role", "menuitem");
+        builder.AddAttribute(19, "onclick", EventCallback.Factory.Create(this, SignOutAsync));
+        builder.AddContent(20, "Log Out");
+        builder.CloseElement();
+        builder.CloseElement();
+
+        builder.CloseElement();
+    };
+
     private void ToggleMenu()
     {
         _isOpen = !_isOpen;
@@ -58,10 +81,6 @@
     {
         _isOpen = false;
     }
-
-    private void NavigateToAccount() => NavigateTo("/account");
-
-    private void NavigateToSettings() => NavigateTo("/settings");
 
     private void NavigateTo(string href)
     {

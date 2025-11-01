@@ -1,3 +1,5 @@
+﻿@inject NavigationManager Nav
+
 <nav class="nw-nav" style="margin-bottom:16px">
     <div class="nw-container">
         <div class="nw-primary">
@@ -41,6 +43,9 @@
 </nav>
 
 @code {
+    [Parameter] public string? Brand { get; set; } = "YourBrand";
+    [Parameter] public string BrandHref { get; set; } = "/";
+
     // Left side buttons (e.g., Home / Forum / Devlog)
     [Parameter] public IEnumerable<NavLinkItem>? Left { get; set; }
 

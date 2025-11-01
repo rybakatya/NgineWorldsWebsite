@@ -1,32 +1,51 @@
-﻿@page "/register"
+@page "/register"
 @using Contracts.Auth
-@inject HttpClient Http;
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject frontend.Services.AuthService Auth
 
 <AuthCard Kind="AuthCard.AuthKind.Register"
-Title="Register"
-ButtonText="Submit"
-OnSubmit="SubmitRegister" />
+          Title="Register"
+          ButtonText="Submit"
+          OnSubmit="SubmitRegister" />
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <p class="auth-error">@_errorMessage</p>
+}
 
 @code {
-    private async Task SubmitRegister(AuthCard.AuthCardModel m)
+    private string? _errorMessage;
+
+    private async Task SubmitRegister(AuthCard.AuthCardModel model)
     {
-        var res = await Http.PostAsJsonAsync("api/auth/register", new RegisterDto(){
-            Email = m.Email,
-            Password = m.Password,
-            Username = m.Username,
+        _errorMessage = null;
+
+        var response = await Http.PostAsJsonAsync("api/auth/register", new RegisterDto
+        {
+            Email = model.Email,
+            Password = model.Password,
+            Username = model.Username,
             Role = "Admin"
         });
-        if(res.IsSuccessStatusCode)
+
+        if (response.IsSuccessStatusCode)
         {
-            var body = await res.Content.ReadFromJsonAsync<AuthResponse>();
-            Console.WriteLine($"Registered: {body?.AccessToken}");
+            var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (body is not null)
+            {
+                await Auth.SignInAsync(body);
+                Nav.NavigateTo("/");
+                return;
+            }
+
+            _errorMessage = "Unable to complete registration. Please try again.";
+            return;
         }
-        else
-        {
-            var error = await res.Content.ReadAsStringAsync();
-            Console.Error.WriteLine($"Failed: {(int)res.StatusCode} {error}");
-        }
-        Console.WriteLine($"Register: user={m.Username}, email={m.Email}, pwLen={m.Password?.Length}, confirmLen={m.Confirm?.Length}");
-        await Task.CompletedTask;
+
+        var errorContent = await response.Content.ReadAsStringAsync();
+        _errorMessage = string.IsNullOrWhiteSpace(errorContent)
+            ? "Unable to complete registration. Please try again."
+            : errorContent;
     }
 }

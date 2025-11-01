@@ -65,6 +65,21 @@ public class AuthController : ControllerBase
         return Ok(new AuthResponse(token, "Bearer", roles));
     }
 
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Strict,
+            Path = "/"
+        };
+
+        Response.Cookies.Delete(AuthConstants.AuthCookieName, options);
+        return NoContent();
+    }
+
     private void SetAuthCookie(string token)
     {
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);

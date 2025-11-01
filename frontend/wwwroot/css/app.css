@@ -94,3 +94,11 @@ main:focus {
     --nw-border: #232a36;
     color-scheme: dark;
 }
+
+.auth-error {
+    margin: 1rem auto 0;
+    max-width: 520px;
+    color: #ff6b6b;
+    text-align: center;
+    font-size: 0.95rem;
+}

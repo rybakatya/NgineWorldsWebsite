@@ -1,5 +1,7 @@
+using frontend.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace frontend
 {
@@ -11,10 +13,17 @@ namespace frontend
             builder.RootComponents.Add<App>("#app");
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
-            builder.Services.AddScoped(sp => new HttpClient 
+            builder.Services.AddScoped(sp => new HttpClient
             { BaseAddress = new Uri("https://localhost:7156/") });
 
-            await builder.Build().RunAsync();
+            builder.Services.AddScoped<AuthService>();
+
+            var host = builder.Build();
+
+            var auth = host.Services.GetRequiredService<AuthService>();
+            await auth.InitializeAsync();
+
+            await host.RunAsync();
         }
     }
 }

@@ -31,31 +31,34 @@
     top: calc(100% + 10px);
     right: 0;
     min-width: 180px;
-    background: var(--nw-surface-2);
+    background: var(--nw-surface);
     border: 1px solid var(--nw-border);
     border-radius: 12px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
     padding: 0.35rem 0;
-    list-style: none;
     margin: 0;
     z-index: 1010;
 }
 
+.profile-dropdown li {
+    list-style: none;
+}
+
 .profile-dropdown li button {
     width: 100%;
-    background: transparent;
+    background: none;
     border: none;
     color: var(--nw-text);
     text-align: left;
     padding: 0.55rem 1rem;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: background .15s ease, color .15s ease;
+    transition: color .15s ease;
 }
 
 .profile-dropdown li button:hover,
 .profile-dropdown li button:focus-visible {
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--nw-accent);
     outline: none;
 }
 

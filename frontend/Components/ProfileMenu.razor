@@ -1,0 +1,82 @@
+@implements IDisposable
+@inject frontend.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<div class="profile-menu" tabindex="-1" @onfocusout="HandleFocusOut">
+    <button type="button"
+            class="profile-button"
+            @onclick="ToggleMenu"
+            aria-haspopup="menu"
+            aria-expanded="@_isOpen"
+            aria-label="Profile menu">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="8" r="4.25" stroke="currentColor" stroke-width="1.6" />
+            <path d="M5 19.5c1.3-3 3.7-4.5 7-4.5s5.7 1.5 7 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+    </button>
+
+    @if (_isOpen)
+    {
+        <ul class="profile-dropdown" role="menu">
+            <li>
+                <button type="button" role="menuitem" @onclick="NavigateToAccount">Account</button>
+            </li>
+            <li>
+                <button type="button" role="menuitem" @onclick="NavigateToSettings">Site Settings</button>
+            </li>
+            <li>
+                <button type="button" role="menuitem" @onclick="SignOutAsync">Log Out</button>
+            </li>
+        </ul>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+
+    protected override void OnInitialized()
+    {
+        Auth.AuthenticationStateChanged += HandleAuthChanged;
+    }
+
+    private void HandleAuthChanged()
+    {
+        if (!Auth.IsAuthenticated)
+        {
+            _isOpen = false;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleMenu()
+    {
+        _isOpen = !_isOpen;
+    }
+
+    private void HandleFocusOut(FocusEventArgs _)
+    {
+        _isOpen = false;
+    }
+
+    private void NavigateToAccount() => NavigateTo("/account");
+
+    private void NavigateToSettings() => NavigateTo("/settings");
+
+    private void NavigateTo(string href)
+    {
+        _isOpen = false;
+        Nav.NavigateTo(href);
+    }
+
+    private async Task SignOutAsync()
+    {
+        _isOpen = false;
+        await Auth.SignOutAsync();
+    }
+
+    public void Dispose()
+    {
+        Auth.AuthenticationStateChanged -= HandleAuthChanged;
+    }
+}

@@ -1,12 +1,14 @@
-﻿<Navbar Left="left" Right="right" />   @* full-width *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject frontend.Services.AuthService Auth
+
+<Navbar Left="left" Right="@RightLinks" RightContent="@ProfileContent" />
 
 <div class="page">
     <main>
         @Body
     </main>
 </div>
-
-
 
 @code {
     private readonly NavLinkItem[] left = new[]
@@ -21,11 +23,27 @@
         new NavLinkItem("Register", "/register"),
         new NavLinkItem("Login", "/login")
     };
-}
 
-@inherits LayoutComponentBase
+    private IEnumerable<NavLinkItem>? RightLinks => Auth.IsAuthenticated ? null : right;
 
+    private RenderFragment? ProfileContent => Auth.IsAuthenticated ? builder =>
+    {
+        builder.OpenComponent<ProfileMenu>(0);
+        builder.CloseComponent();
+    } : null;
 
-@code{
- 
+    protected override void OnInitialized()
+    {
+        Auth.AuthenticationStateChanged += HandleAuthChanged;
+    }
+
+    private void HandleAuthChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Auth.AuthenticationStateChanged -= HandleAuthChanged;
+    }
 }

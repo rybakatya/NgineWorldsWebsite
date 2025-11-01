@@ -15,10 +15,7 @@
         </svg>
     </button>
 
-    @if (_isOpen)
-    {
-        @RenderDropdown()
-    }
+    @_isOpen ? RenderDropdown() : null
 </div>
 
 @code {

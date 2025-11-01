@@ -1,0 +1,31 @@
+﻿<Navbar Left="left" Right="right" />   @* full-width *@
+
+<div class="page">
+    <main>
+        @Body
+    </main>
+</div>
+
+
+
+@code {
+    private readonly NavLinkItem[] left = new[]
+    {
+        new NavLinkItem("Home", "/"),
+        new NavLinkItem("Forum", "/forum"),
+        new NavLinkItem("Devlog", "/devlog")
+    };
+
+    private readonly NavLinkItem[] right = new[]
+    {
+        new NavLinkItem("Register", "/register"),
+        new NavLinkItem("Login", "/login")
+    };
+}
+
+@inherits LayoutComponentBase
+
+
+@code{
+ 
+}

@@ -1,0 +1,32 @@
+﻿@page "/register"
+@using Contracts.Auth
+@inject HttpClient Http;
+
+<AuthCard Kind="AuthCard.AuthKind.Register"
+Title="Register"
+ButtonText="Submit"
+OnSubmit="SubmitRegister" />
+
+@code {
+    private async Task SubmitRegister(AuthCard.AuthCardModel m)
+    {
+        var res = await Http.PostAsJsonAsync("api/auth/register", new RegisterDto(){
+            Email = m.Email,
+            Password = m.Password,
+            Username = m.Username,
+            Role = "Admin"
+        });
+        if(res.IsSuccessStatusCode)
+        {
+            var body = await res.Content.ReadFromJsonAsync<AuthResponse>();
+            Console.WriteLine($"Registered: {body?.AccessToken}");
+        }
+        else
+        {
+            var error = await res.Content.ReadAsStringAsync();
+            Console.Error.WriteLine($"Failed: {(int)res.StatusCode} {error}");
+        }
+        Console.WriteLine($"Register: user={m.Username}, email={m.Email}, pwLen={m.Password?.Length}, confirmLen={m.Confirm?.Length}");
+        await Task.CompletedTask;
+    }
+}

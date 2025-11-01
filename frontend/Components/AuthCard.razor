@@ -1,0 +1,170 @@
+﻿@using Microsoft.AspNetCore.Components
+
+<Box Title="@Title"
+Width="min(92vw, 520px)"
+Height="auto"
+Background="var(--nw-surface)"
+TextColor="#e6e6e6"
+Padding="28px"
+Border="1px solid var(--nw-border)"
+BorderRadius="14px"
+BoxShadow="0 18px 50px rgba(0,0,0,.35)">
+
+    <form class="auth-stack"
+    @onsubmit="HandleSubmit"
+    @onsubmit:preventDefault="true"
+    @onsubmit:stopPropagation="true">
+
+        @if (Kind == AuthKind.Register)
+        {
+            <div class="fl-group">
+                <input id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                placeholder=" "
+                required
+                @bind="Username" />
+                <label for="username">Username</label>
+            </div>
+        }
+
+        <div class="fl-group">
+            <input id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder=" "
+            required
+            @bind="Email" />
+            <label for="email">Email</label>
+        </div>
+
+        <!-- Password with eye -->
+        <div class="fl-group pw-group">
+            <input id="password"
+            name="password"
+            type="@(ShowPassword ? "text" : "password")"
+            autocomplete="@(Kind == AuthKind.Register ? "new-password" : "current-password")"
+            placeholder=" "
+            required
+            @bind="Password" />
+            <label for="password">Password</label>
+
+            <button type="button"
+            class="pw-toggle"
+            @onclick="() => ShowPassword = !ShowPassword"
+            aria-pressed="@ShowPassword"
+            aria-label="@(ShowPassword ? "Hide password" : "Show password")">
+                @if (ShowPassword)
+                {
+                    <!-- eye-off -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M3 3l18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M10.58 10.58a3 3 0 0 0 4.24 4.24" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M14.12 14.12C12.9 15.34 11.1 16 9 16c-3 0-6-2.69-7.5-5 1-1.76 2.8-3.34 4.86-4.32" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M21.9 12c-1.5 2.31-4.5 5-7.9 5-1.7 0-3.33-.5-4.7-1.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                }
+                else
+                {
+                    <!-- eye -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                }
+            </button>
+        </div>
+
+        @if (Kind == AuthKind.Register)
+        {
+            <!-- Confirm with eye + validity -->
+            <div class="fl-group pw-group">
+                <input id="confirm"
+                name="confirm"
+                type="@(ShowConfirm ? "text" : "password")"
+                autocomplete="new-password"
+                placeholder=" "
+                required
+                @bind="Confirm"
+                oninput="
+                         this.setCustomValidity(
+                           this.value !== document.getElementById('password').value
+                             ? 'Your passwords do not match' : ''
+                         );" />
+                <label for="confirm">Confirm password</label>
+
+                <button type="button"
+                class="pw-toggle"
+                @onclick="() => ShowConfirm = !ShowConfirm"
+                aria-pressed="@ShowConfirm"
+                aria-label="@(ShowConfirm ? "Hide confirm password" : "Show confirm password")">
+                    @if (ShowConfirm)
+                    {
+                        <!-- eye-off -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M3 3l18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M10.58 10.58a3 3 0 0 0 4.24 4.24" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M14.12 14.12C12.9 15.34 11.1 16 9 16c-3 0-6-2.69-7.5-5 1-1.76 2.8-3.34 4.86-4.32" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M21.9 12c-1.5 2.31-4.5 5-7.9 5-1.7 0-3.33-.5-4.7-1.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <!-- eye -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    }
+                </button>
+            </div>
+        }
+
+        <button class="btn-primary full" type="submit">@ButtonText</button>
+    </form>
+</Box>
+
+@code {
+    [Parameter] public AuthKind Kind { get; set; } = AuthKind.Login;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? ButtonText { get; set; }
+    [Parameter] public EventCallback<AuthCardModel> OnSubmit { get; set; }
+
+    // local state
+    private string Username { get; set; } = string.Empty;
+    private string Email { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+    private string Confirm { get; set; } = string.Empty;
+    private bool ShowPassword;
+    private bool ShowConfirm;
+
+    protected override void OnParametersSet()
+    {
+        Title ??= Kind == AuthKind.Register ? "Register" : "Sign in";
+        ButtonText ??= Kind == AuthKind.Register ? "Create account" : "Sign in";
+    }
+
+    private Task HandleSubmit()
+    {
+        var model = new AuthCardModel
+            {
+                Username = Kind == AuthKind.Register ? Username : string.Empty,
+                Email = Email,
+                Password = Password,
+                Confirm = Kind == AuthKind.Register ? Confirm : string.Empty
+            };
+        return OnSubmit.InvokeAsync(model);
+    }
+
+    public enum AuthKind { Login, Register }
+
+    public sealed class AuthCardModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Confirm { get; set; } = string.Empty;
+    }
+}

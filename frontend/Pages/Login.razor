@@ -1,0 +1,14 @@
+﻿@page "/login"
+
+<AuthCard Kind="AuthCard.AuthKind.Login"
+          Title="Login"
+          ButtonText="Submit"
+          OnSubmit="SubmitLogin" />
+
+@code {
+    private async Task SubmitLogin(AuthCard.AuthCardModel m)
+    {
+        Console.WriteLine($"Login: email={m.Email}, pwLen={m.Password?.Length}");
+        await Task.CompletedTask;
+    }
+}

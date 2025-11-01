@@ -1,0 +1,134 @@
+﻿@* Box centered in viewport; title at top; child content centered within the box *@
+<div style="position:fixed; inset:@OffsetTop 0 0 0; display:grid; place-items:center; pointer-events:none;">
+    <div @attributes="FilteredAttributes"
+         class="@BuildClass()"
+         style="@BuildStyle(); pointer-events:auto;">
+
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <h1 style="@BuildTitleStyle()">@Title</h1>
+        }
+
+        <div style="@BuildContentStyle()">
+            @ChildContent
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // Box appearance/size
+    [Parameter] public string? Width { get; set; }
+    [Parameter] public string? Height { get; set; }                    // e.g., "420px" or "auto"
+    [Parameter] public string Background { get; set; } = "#2f3330";
+    [Parameter] public string? TextColor { get; set; }
+    [Parameter] public string? Padding { get; set; } = "24px";
+    [Parameter] public string? Border { get; set; }
+    [Parameter] public string? BorderRadius { get; set; } = "12px";
+    [Parameter] public string? BoxShadow { get; set; } = "0 10px 30px rgba(0,0,0,.35)";
+
+    // Center below a sticky navbar if you have one (e.g., "64px")
+    [Parameter] public string OffsetTop { get; set; } = "0";
+
+    // Title options
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? TitleColor { get; set; }          // default inherits TextColor
+    [Parameter] public string? TitleMargin { get; set; } = "0 0 12px 0";
+    [Parameter] public string? TitleFontSize { get; set; } = "1.75rem";
+    [Parameter] public string? TitleLetterSpacing { get; set; } = ".2px";
+    [Parameter] public string? TitleStyle { get; set; }           // extra inline styles if needed
+
+    // Class/Style passthrough
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string BuildClass()
+    {
+        var classes = new List<string> { "color-box" };
+        if (!string.IsNullOrWhiteSpace(Class)) classes.Add(Class);
+
+        if (AdditionalAttributes is not null &&
+            AdditionalAttributes.TryGetValue("class", out var extra) &&
+            !string.IsNullOrWhiteSpace(extra?.ToString()))
+        {
+            classes.Add(extra!.ToString()!);
+        }
+        return string.Join(" ", classes);
+    }
+
+    private string BuildStyle()
+    {
+        // Make the box a 2-row grid: title (auto) + content (1fr).
+        var parts = new List<string>
+        {
+            "display:grid",
+            "grid-template-rows:auto 1fr",
+            "align-items:start",
+            "justify-items:stretch",
+            "gap:12px",                         // space between title and content
+            "max-width:100vw"                   // avoid overflow on narrow screens
+        };
+
+        if (!string.IsNullOrWhiteSpace(Width)) parts.Add($"width:{Width}");
+        if (!string.IsNullOrWhiteSpace(Height)) parts.Add($"height:{Height}");
+        if (!string.IsNullOrWhiteSpace(Background)) parts.Add($"background:{Background}");
+        if (!string.IsNullOrWhiteSpace(TextColor)) parts.Add($"color:{TextColor}");
+        if (!string.IsNullOrWhiteSpace(Padding)) parts.Add($"padding:{Padding}");
+        if (!string.IsNullOrWhiteSpace(Border)) parts.Add($"border:{Border}");
+        if (!string.IsNullOrWhiteSpace(BorderRadius)) parts.Add($"border-radius:{BorderRadius}");
+        if (!string.IsNullOrWhiteSpace(BoxShadow)) parts.Add($"box-shadow:{BoxShadow}");
+        if (!string.IsNullOrWhiteSpace(Style)) parts.Add(Style!);
+
+        if (AdditionalAttributes is not null &&
+            AdditionalAttributes.TryGetValue("style", out var extraStyle) &&
+            !string.IsNullOrWhiteSpace(extraStyle?.ToString()))
+        {
+            parts.Add(extraStyle!.ToString()!);
+        }
+
+        return string.Join(";", parts);
+    }
+
+    private string BuildTitleStyle()
+    {
+        var parts = new List<string>
+        {
+            "text-align:center",
+            "line-height:1.2",
+            $"margin:{TitleMargin}",
+            $"font-size:{TitleFontSize}",
+            $"letter-spacing:{TitleLetterSpacing}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(TitleColor)) parts.Add($"color:{TitleColor}");
+        else if (!string.IsNullOrWhiteSpace(TextColor)) parts.Add($"color:{TextColor}");
+
+        if (!string.IsNullOrWhiteSpace(TitleStyle)) parts.Add(TitleStyle!);
+
+        return string.Join(";", parts);
+    }
+
+    // Content area gets the remaining space (1fr) and centers its children
+    private string BuildContentStyle()
+    {
+        return string.Join(";", new[]
+        {
+            "display:grid",
+            "place-items:center",   // center both axes
+            "justify-items:center",
+            "align-items:center",
+            "width:100%",
+            "height:100%",
+            "min-height:0"          // prevents overflow issues in some layouts
+        });
+    }
+
+    private IReadOnlyDictionary<string, object> FilteredAttributes =>
+        (AdditionalAttributes ?? new Dictionary<string, object>())
+        .Where(kv => kv.Key is not "class" and not "style")
+        .ToDictionary(kv => kv.Key, kv => kv.Value);
+}

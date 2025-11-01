@@ -1,0 +1,1 @@
+﻿public record AuthResponse(string AccessToken, string TokenType, string[] Roles);

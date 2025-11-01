@@ -48,7 +48,7 @@
 
 .profile-dropdown li button {
     width: 100%;
-    background: transparent;
+    background: none;
     border: none;
     color: var(--nw-text);
     text-align: left;

@@ -4,15 +4,15 @@
     <div class="nw-container">
         <div class="nw-primary">
             <div class="nw-links @(isOpen ? "open" : null)">
-                <ul class="nw-left">
-                    @if (Left is not null)
-                    {
+                @if (Left is not null)
+                {
+                    <ul class="nw-left">
                         @foreach (var item in Left)
                         {
                             <li><NavLink class="nw-link" href="@item.Href" Match="NavLinkMatch.All">@item.Text</NavLink></li>
                         }
-                    }
-                </ul>
+                    </ul>
+                }
 
                 @if (RightContent is null && Right is not null)
                 {
@@ -21,11 +21,12 @@
                         {
                             <li><NavLink class="nw-link" href="@item.Href">@item.Text</NavLink></li>
                         }
-                    }
+                    </ul>
                 }
             </div>
 
             <button class="nw-burger"
+                    type="button"
                     @onclick="ToggleMenu"
                     aria-label="Toggle menu"
                     aria-expanded="@isOpen">

@@ -30,7 +30,7 @@
 
 .profile-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 0.65rem);
     right: 0;
     min-width: 190px;
     margin: 0;
@@ -41,6 +41,19 @@
     box-shadow: 0 12px 32px rgba(0, 0, 0, .32);
     list-style: none;
     z-index: 1010;
+}
+
+.profile-dropdown::before {
+    content: "";
+    position: absolute;
+    top: -0.65rem;
+    right: 18px;
+    width: 12px;
+    height: 12px;
+    background: var(--nw-surface);
+    border-left: 1px solid var(--nw-border);
+    border-top: 1px solid var(--nw-border);
+    transform: rotate(45deg);
 }
 
 .profile-dropdown li {

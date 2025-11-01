@@ -1,6 +1,5 @@
 /* --- Profile menu (authenticated state) --- */
 .profile-menu {
-    position: relative;
     display: inline-flex;
     align-items: center;
     height: 100%;
@@ -29,9 +28,7 @@
 
 
 .profile-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
     min-width: 190px;
     margin: 0;
     padding: 0.4rem 0;

@@ -2,41 +2,43 @@
 
 <nav class="nw-nav" style="margin-bottom:16px">
     <div class="nw-container">
-       
-        <button class="nw-burger"
-                @onclick="ToggleMenu"
-                aria-label="Toggle menu"
-                aria-expanded="@isOpen">
-            <span></span><span></span><span></span>
-        </button>
-
-        <div class="nw-links @(isOpen ? "open" : null)">
-            <ul class="nw-left">
-                @if (Left is not null)
-                {
-                    @foreach (var item in Left)
+        <div class="nw-primary">
+            <div class="nw-links @(isOpen ? "open" : null)">
+                <ul class="nw-left">
+                    @if (Left is not null)
                     {
-                        <li><NavLink class="nw-link" href="@item.Href" Match="NavLinkMatch.All">@item.Text</NavLink></li>
-                    }
-                }
-            </ul>
-
-            @if (RightContent is not null)
-            {
-                <div class="nw-right">
-                    @RightContent
-                </div>
-            }
-            else if (Right is not null)
-            {
-                <ul class="nw-right">
-                    @foreach (var item in Right)
-                    {
-                        <li><NavLink class="nw-link" href="@item.Href">@item.Text</NavLink></li>
+                        @foreach (var item in Left)
+                        {
+                            <li><NavLink class="nw-link" href="@item.Href" Match="NavLinkMatch.All">@item.Text</NavLink></li>
+                        }
                     }
                 </ul>
-            }
+
+                @if (RightContent is null && Right is not null)
+                {
+                    <ul class="nw-right">
+                        @foreach (var item in Right)
+                        {
+                            <li><NavLink class="nw-link" href="@item.Href">@item.Text</NavLink></li>
+                        }
+                    }
+                }
+            </div>
+
+            <button class="nw-burger"
+                    @onclick="ToggleMenu"
+                    aria-label="Toggle menu"
+                    aria-expanded="@isOpen">
+                <span></span><span></span><span></span>
+            </button>
         </div>
+
+        @if (RightContent is not null)
+        {
+            <div class="nw-profile-slot">
+                @RightContent
+            </div>
+        }
     </div>
 </nav>
 

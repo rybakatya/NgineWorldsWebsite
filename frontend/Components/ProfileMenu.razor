@@ -1,12 +1,10 @@
 @implements IDisposable
 @inject frontend.Services.AuthService Auth
 @inject NavigationManager Nav
-@inject IJSRuntime JS
 
 <div class="profile-menu" tabindex="-1" @onfocusout="HandleFocusOut">
     <button type="button"
             class="profile-button"
-            @ref="_buttonRef"
             @onclick="ToggleMenuAsync"
             aria-haspopup="menu"
             aria-expanded="@_isOpen">
@@ -25,9 +23,6 @@
 
 @code {
     private bool _isOpen;
-    private ElementReference _buttonRef;
-    private string _dropdownStyle = string.Empty;
-
     protected override void OnInitialized()
     {
         Auth.AuthenticationStateChanged += HandleAuthChanged;
@@ -38,7 +33,6 @@
         if (!Auth.IsAuthenticated)
         {
             _isOpen = false;
-            _dropdownStyle = string.Empty;
         }
 
         InvokeAsync(StateHasChanged);
@@ -49,11 +43,6 @@
         builder.OpenElement(0, "ul");
         builder.AddAttribute(1, "class", "profile-dropdown");
         builder.AddAttribute(2, "role", "menu");
-        if (!string.IsNullOrWhiteSpace(_dropdownStyle))
-        {
-            builder.AddAttribute(3, "style", _dropdownStyle);
-        }
-
         builder.OpenElement(4, "li");
         builder.OpenElement(5, "button");
         builder.AddAttribute(6, "type", "button");
@@ -84,56 +73,31 @@
         builder.CloseElement();
     };
 
-    private async Task ToggleMenuAsync()
+    private Task ToggleMenuAsync()
     {
-        if (_isOpen)
-        {
-            _isOpen = false;
-            return;
-        }
-
-        _isOpen = true;
-        await UpdateDropdownPositionAsync();
+        _isOpen = !_isOpen;
+        return Task.CompletedTask;
     }
 
     private void HandleFocusOut(FocusEventArgs _)
     {
         _isOpen = false;
-        _dropdownStyle = string.Empty;
     }
 
     private void NavigateTo(string href)
     {
         _isOpen = false;
-        _dropdownStyle = string.Empty;
         Nav.NavigateTo(href);
     }
 
     private async Task SignOutAsync()
     {
         _isOpen = false;
-        _dropdownStyle = string.Empty;
         await Auth.SignOutAsync();
-    }
-
-    private async Task UpdateDropdownPositionAsync()
-    {
-        var rect = await JS.InvokeAsync<ElementRect?>("profileMenu.getAnchorPosition", _buttonRef);
-        if (rect is null)
-        {
-            _dropdownStyle = string.Empty;
-            return;
-        }
-
-        var top = rect.Bottom + 8;
-        var right = Math.Max(0, rect.ViewportWidth - rect.Right);
-        _dropdownStyle = $"top: {top.ToString(System.Globalization.CultureInfo.InvariantCulture)}px; right: {right.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;";
     }
 
     public void Dispose()
     {
         Auth.AuthenticationStateChanged -= HandleAuthChanged;
     }
-
-    private sealed record ElementRect(double Left, double Top, double Right, double Bottom, double ViewportWidth);
 }

@@ -1,8 +1,10 @@
 /* --- Profile menu (authenticated state) --- */
 .profile-menu {
+    position: relative;
     display: inline-flex;
     align-items: center;
     height: 100%;
+    overflow: visible;
 }
 
 .profile-button {

@@ -1,0 +1,10 @@
+﻿@page "/admin"
+@inject AuthState Auth;
+
+@if (Auth.Roles.HasFlag(Contracts.Auth.Roles.Admin))
+{
+	<p>Only Admins Can see this.</p>
+}
+@code {
+
+}

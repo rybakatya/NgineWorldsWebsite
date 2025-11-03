@@ -1,0 +1,36 @@
+﻿@page "/login"
+@inject Services.AuthService Api
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<AuthCard Kind="AuthCard.AuthKind.Login"
+Title="Sign in"
+ButtonText="Sign in"
+OnSubmit="HandleLogin" />
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <p>@message</p>
+}
+
+@code {
+    string message = "";
+
+    private async Task HandleLogin(AuthCard.AuthCardModel model)
+    {
+        // model.Email + model.Password are set; Username/Confirm are empty for Login
+        message = "Signing in...";
+        var res = await Api.LoginAsync(model.Email, model.Password);
+
+        // Optional: ping /me to verify cookie-auth really stuck
+        var (ok, body) = await Api.MeAsync();
+        if(ok)
+        {
+            message = $"Signed in. /me => {body}";
+            await JS.InvokeVoidAsync("console.log", message);
+            Nav.NavigateTo("/"); // go somewhere after login
+        }
+
+        
+    }
+}

@@ -1,49 +1,100 @@
+﻿@using static frontend.Components.UserIcon
 @inherits LayoutComponentBase
-@implements IDisposable
-@inject frontend.Services.AuthService Auth
+@inject Services.AuthService Api
+@using Microsoft.AspNetCore.Components
+@using Contracts.Auth;
+@inject NavigationManager Nav
+@inject AuthState Auth
+<div class="layout-root">
+    <ul class="topnav">
+        <li><a href="/">Home</a></li>
+        <li>
+            <a href="https://discord.gg/WZtkFww62d"
+               target="_blank"
+               rel="noopener noreferrer">Community</a>
+        </li>
+        <li><a href="/devlog">Devlog</a></li>
+        <li><a href="/about">About</a></li>
 
-<Navbar Left="left" Right="@RightLinks" RightContent="@ProfileContent" />
+        @if (Auth.Authed == false)
+        {
+            <li><a href="/login">Login</a></li>
+            <li><a href="/register">Register</a></li>
+        }
+        else
+        {
+            <li class="profile">
+                <button class="avatar-btn"
+                aria-haspopup="menu"
+                aria-expanded="@menuOpen"
+                @onclick="ToggleMenu">
+                    <UserIcon Variant="IconVariant.Solid" Color="#7c3aed"/>
+                </button>
 
-<div class="page">
-    <main>
-        @Body
-    </main>
+                @if (menuOpen)
+                {
+                    <div class="menu" role="menu">
+                        <a role="menuitem" href="/account" @onclick="() => CloseMenu()">Account</a>
+                        <a role="menuitem" href="/settings" @onclick="() => CloseMenu()">Site settings</a>
+                        @if(Auth.Roles.HasFlag(Roles.Admin))
+                        {
+                            <a role="menuitem" href="/admin" @onclick="() => CloseMenu()">Admin Panel</a>
+                        }
+                        <button role="menuitem" class="danger" @onclick="Logout">Logout</button>
+                    </div>
+                    <div class="menu-backdrop" @onclick="CloseMenu"></div>
+                }
+            </li>
+        }
+    </ul>
+
+    <div class="page">
+        <main>
+            @Body
+        </main>
+    </div>
 </div>
 
 @code {
-    private readonly NavLinkItem[] left = new[]
-    {
-        new NavLinkItem("Home", "/"),
-        new NavLinkItem("Forum", "/forum"),
-        new NavLinkItem("Devlog", "/devlog")
-    };
 
-    private readonly NavLinkItem[] right = new[]
-    {
-        new NavLinkItem("Register", "/register"),
-        new NavLinkItem("Login", "/login")
-    };
+    private bool menuOpen;
 
-    private IEnumerable<NavLinkItem>? RightLinks => Auth.IsAuthenticated ? null : right;
-
-    private RenderFragment? ProfileContent => Auth.IsAuthenticated ? builder =>
+    protected override async Task OnInitializedAsync()
     {
-        builder.OpenComponent<ProfileMenu>(0);
-        builder.CloseComponent();
-    } : null;
+        var req = await Api.MeAsync();
+        var authed = req.success;
+        var roles = req.content.Roles;
 
-    protected override void OnInitialized()
-    {
-        Auth.AuthenticationStateChanged += HandleAuthChanged;
+        // publish to global state
+        Auth.Set(authed, roles);
+
+        Api.onAuthStatusChanged += OnAuthStatusChanged;
+        StateHasChanged();
     }
 
-    private void HandleAuthChanged()
+    private void OnAuthStatusChanged(bool status, Roles r)
     {
-        InvokeAsync(StateHasChanged);
+        var authed = status;
+        var roles = r;
+
+        // publish to global state
+        Auth.Set(status, roles);
+
+        // make sure UI thread re-renders
+        _ = InvokeAsync(StateHasChanged);
+    }
+    void ToggleMenu() => menuOpen = !menuOpen;
+    void CloseMenu() => menuOpen = false;
+
+    private async Task Logout()
+    {
+        menuOpen = false;
+        var result = await Api.LogoutAsync();
+        if(result.success == true)
+        {
+            Auth.Set(false, Roles.None);
+            Nav.NavigateTo("/");
+        }
     }
 
-    public void Dispose()
-    {
-        Auth.AuthenticationStateChanged -= HandleAuthChanged;
-    }
 }

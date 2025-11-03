@@ -1,101 +1,124 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using AuthApi;
-using Microsoft.AspNetCore.Http;
-using AuthApi.Data;
-using AuthApi.Services;
+﻿using System.Security.Claims;
+using BCrypt.Net;
 using Contracts.Auth;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SiteAPI.Data;
 
-namespace AuthApi.Controllers;
+using SiteAPI.Models;
+using SiteAPI.Services;
+
+namespace SiteAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _users;
-    private readonly RoleManager<IdentityRole> _roles;
-    private readonly IJwtTokenService _jwt;
+    private readonly AppDbContext _db;
+    private readonly TokenService _tokens;
+    private readonly IConfiguration _config;
 
-    public AuthController(UserManager<ApplicationUser> users,
-                          RoleManager<IdentityRole> roles,
-                          IJwtTokenService jwt)
+    public AuthController(AppDbContext db, TokenService tokens, IConfiguration config)
     {
-        _users = users;
-        _roles = roles;
-        _jwt = jwt;
+        _db = db;
+        _tokens = tokens;
+        _config = config;
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+    public async Task<ActionResult<MeResponse>> Register(RegisterRequest req)
     {
-        var user = new ApplicationUser { UserName = dto.Username, Email = dto.Email, EmailConfirmed = true };
-        var result = await _users.CreateAsync(user, dto.Password);
-        if (!result.Succeeded)
-            return BadRequest(result.Errors.Select(e => e.Description));
+        if (string.IsNullOrWhiteSpace(req.Username) ||
+            string.IsNullOrWhiteSpace(req.Email) ||
+            string.IsNullOrWhiteSpace(req.Password))
+            return BadRequest("All fields are required.");
 
-        if (!string.IsNullOrWhiteSpace(dto.Role))
+        if (await _db.Users.AnyAsync(u => u.Username == req.Username))
+            return Conflict("Username already taken.");
+
+        if (await _db.Users.AnyAsync(u => u.Email == req.Email))
+            return Conflict("Email already in use.");
+
+        var user = new User
         {
-            if (!await _roles.RoleExistsAsync(dto.Role))
-                await _roles.CreateAsync(new IdentityRole(dto.Role));
-            await _users.AddToRoleAsync(user, dto.Role);
-        }
+            Username = req.Username.Trim(),
+            Email = req.Email.Trim(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
+            Roles = Roles.Member
+        };
 
-        var token = await _jwt.CreateTokenAsync(user);
-        var roles = (await _users.GetRolesAsync(user)).ToArray();
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
 
-        SetAuthCookie(token);
-        return Ok(new AuthResponse(token, "Bearer", roles));
+        // Optional: auto-login after register
+        await IssueCookieAsync(user);
+        return new MeResponse { Id = user.Id, Username = user.Username, Email = user.Email, Roles = user.Roles };
     }
 
+
+
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
+    public async Task<ActionResult<MeResponse>> Login(LoginRequest req)
     {
-        var user = await _users.FindByEmailAsync(dto.Email);
+        var name = req.UsernameOrEmail.Trim();
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Username == name || u.Email == name);
+
+        if (user is null) return Unauthorized("Invalid credentials.");
+
+        if (!BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+            return Unauthorized("Invalid credentials.");
+
+        await IssueCookieAsync(user);
+        return new MeResponse { Id = user.Id, Username = user.Username, Email = user.Email, Roles = user.Roles };
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<MeResponse>> Me()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                  ?? User.FindFirstValue(ClaimTypes.Name)
+                  ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var userIdStr = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        var user = await _db.Users.FindAsync(userId);
         if (user is null) return Unauthorized();
 
-        var valid = await _users.CheckPasswordAsync(user, dto.Password);
-        if (!valid) return Unauthorized();
-
-        var token = await _jwt.CreateTokenAsync(user);
-        var roles = (await _users.GetRolesAsync(user)).ToArray();
-
-        SetAuthCookie(token);
-        return Ok(new AuthResponse(token, "Bearer", roles));
+        return new MeResponse { Id = user.Id, Username = user.Username, Email = user.Email, Roles = user.Roles };
     }
 
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        var options = new CookieOptions
+        var cookieName = _config["Jwt:CookieName"]!;
+        Response.Cookies.Delete(cookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
             Path = "/"
-        };
-
-        Response.Cookies.Delete(AuthConstants.AuthCookieName, options);
-        return NoContent();
+        });
+        return Ok(new { message = "Logged out" });
     }
 
-    private void SetAuthCookie(string token)
+    private Task IssueCookieAsync(User user)
     {
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        var expires = jwt.ValidTo == DateTime.MinValue
-            ? (DateTimeOffset?)null
-            : new DateTimeOffset(DateTime.SpecifyKind(jwt.ValidTo, DateTimeKind.Utc));
+        var token = _tokens.CreateToken(user.Id, user.Username, user.Email, user.Roles);
+        var cookieName = _config["Jwt:CookieName"]!;
 
-        var options = new CookieOptions
+        Response.Cookies.Append(cookieName, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
+            Secure = true,            // true for HTTPS; for local HTTP dev you can set false if needed
+            SameSite = SameSiteMode.Lax,
             Path = "/",
-            Expires = expires
-        };
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
+        });
 
-        Response.Cookies.Append(AuthConstants.AuthCookieName, token, options);
+        return Task.CompletedTask;
     }
 }

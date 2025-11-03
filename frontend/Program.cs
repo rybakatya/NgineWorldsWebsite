@@ -1,7 +1,9 @@
-using frontend.Services;
+
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+
 using Microsoft.Extensions.DependencyInjection;
+using Services;
 
 namespace frontend
 {
@@ -13,15 +15,20 @@ namespace frontend
             builder.RootComponents.Add<App>("#app");
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
+            /* builder.Services.AddScoped(sp => new HttpClient
+             { BaseAddress = new Uri("https://localhost:7156/") });*/
+            builder.Services.AddScoped<AuthState>();
             builder.Services.AddScoped(sp => new HttpClient
-            { BaseAddress = new Uri("https://localhost:7156/") });
-
+            {
+                // same-origin base (server hosts the client + API)
+                BaseAddress = new Uri(new Uri(builder.HostEnvironment.BaseAddress), "/")
+            });
             builder.Services.AddScoped<AuthService>();
 
             var host = builder.Build();
 
-            var auth = host.Services.GetRequiredService<AuthService>();
-            await auth.InitializeAsync();
+           
+            
 
             await host.RunAsync();
         }

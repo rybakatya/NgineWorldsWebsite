@@ -1,0 +1,53 @@
+﻿@* UserIcon.razor *@
+
+<svg class="@Class"
+     style="@Style"
+     width="@Size" height="@Size" viewBox="0 0 24 24"
+     role="img"
+     aria-hidden="@(Decorative ? "true" : "false")"
+     aria-labelledby="@((!Decorative && !string.IsNullOrWhiteSpace(Title)) ? titleId : null)"
+     fill="@(Variant == IconVariant.Solid ? Color : "none")"
+     stroke="@(Variant == IconVariant.Outline ? Color : "none")"
+     stroke-width="@StrokeWidth"
+     stroke-linecap="round" stroke-linejoin="round"
+     @attributes="AdditionalAttributes">
+
+    @if (!Decorative && !string.IsNullOrWhiteSpace(Title))
+    {
+        <title id="@titleId">@Title</title>
+    }
+
+    @if (Variant == IconVariant.Outline)
+    {
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" />
+    }
+    else
+    {
+        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-9 2.67-9 6a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1c0-3.33-3.67-6-9-6Z" />
+    }
+</svg>
+
+@code {
+    [Parameter] public IconVariant Variant { get; set; } = IconVariant.Outline;
+    [Parameter] public string Size { get; set; } = "24";
+    [Parameter] public double StrokeWidth { get; set; } = 1.8;
+    [Parameter] public string Color { get; set; } = "currentColor";
+    [Parameter] public string? Title { get; set; } = "User";
+    [Parameter] public bool Decorative { get; set; } = false;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    // Attribute splatting target:
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private readonly string titleId = $"usericon-{Guid.NewGuid():N}";
+
+    public enum IconVariant { Outline, Solid }
+}
+
+
+
+
+

@@ -1,7 +1,119 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<section class="nw-hero">
+    <div class="nw-container">
+        <div class="nw-hero__copy">
+            <h1 class="nw-hero__headline">
+                Ngine Worlds
+                <span class="nw-hero__tag">Play endlessly. Create freely. Every world is a new story.</span>
+            </h1>
+            <p class="nw-hero__sub">
+                Jump into countless player-made worlds or build your own from scratch.
+                Our unrestrictive, feature-rich mod SDK makes creating unique multiplayer experiences effortless.
+            </p>
+        </div>
 
-<h1>Hello, world!</h1>
+        <!-- Background panels for the three actions -->
+        <div class="nw-actionpanels">
+            <a href="#trailer" class="nw-action">
+                <div class="nw-action__icon" aria-hidden="true">▶️</div>
+                <div class="nw-action__label">Play Trailer</div>
+            </a>
+            <a href="/download" class="nw-action">
+                <div class="nw-action__icon" aria-hidden="true">⬇️</div>
+                <div class="nw-action__label">Get the Game</div>
+            </a>
+            <a href="/community" class="nw-action">
+                <div class="nw-action__icon" aria-hidden="true">💬</div>
+                <div class="nw-action__label">Join the Community</div>
+            </a>
+        </div>
 
-Welcome to your new app.
+        <!-- Three clear paths (kept, but tuned for multiplayer & SDK) -->
+        <div class="nw-hero__paths">
+            <a href="/play" class="nw-path">
+                <div class="nw-path__icon">🎮</div>
+                <div class="nw-path__title">Jump into Massive Worlds</div>
+                <p class="nw-path__body">High-CCU servers, unique modes, community driven.</p>
+            </a>
+            <a href="/create" class="nw-path">
+                <div class="nw-path__icon">🛠️</div>
+                <div class="nw-path__title">Create with a Powerful SDK</div>
+                <p class="nw-path__body">Intuitive tools, rich APIs, beginner friendly.</p>
+            </a>
+            <a href="/community" class="nw-path">
+                <div class="nw-path__icon">🌍</div>
+                <div class="nw-path__title">Play Together</div>
+                <p class="nw-path__body">Join friends or meet new players across massive community worlds and official servers.</p>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Value strip: focused on multiplayer & SDK; removed "Low latency servers" -->
+<section class="nw-strip">
+    <div class="nw-container nw-strip__row">
+        <div class="nw-strip__item">👥 High-CCU Multiplayer</div>
+        <div class="nw-strip__item">🧩 Feature-Rich Mod SDK</div>
+        <div class="nw-strip__item">🖧 Dedicated & Community Hosting</div>
+        <div class="nw-strip__item">🧭 Jump In & Play — No Setup</div>
+    </div>
+</section>
+
+<section class="nw-showcase" id="trailer">
+    <div class="nw-container">
+        <div class="nw-showcase__media">
+            <!-- Replace with your video/embed -->
+            <div class="nw-media-placeholder">Trailer / Screenshot Carousel</div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature tiles with clear backgrounds (your requested four items) -->
+<section class="nw-featuregrid" id="features">
+    <div class="nw-container">
+        <div class="nw-featuregrid__grid">
+            <article class="nw-card nw-card--framed">
+                <h3 class="nw-card__title">Play Thousands of Worlds</h3>
+                <p class="nw-card__body">Explore community-made servers and unique game modes.</p>
+            </article>
+            <article class="nw-card nw-card--framed">
+                <h3 class="nw-card__title">Create with Power</h3>
+                <p class="nw-card__body">Use an easy, feature-rich SDK to build vehicles, maps, and systems.</p>
+            </article>
+            <article class="nw-card nw-card--framed">
+                <h3 class="nw-card__title">Monetize Your Mods</h3>
+                <p class="nw-card__body">Earn from your creations through the creator marketplace.</p>
+            </article>
+            <article class="nw-card nw-card--framed">
+                <h3 class="nw-card__title">Community-Driven</h3>
+                <p class="nw-card__body">Host servers, collaborate, and grow your player base.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+
+
+<footer class="nw-footer">
+    <div class="nw-container nw-footer__grid">
+        <div class="nw-footer__brand">
+            <div class="nw-logo">NW</div>
+            <p>Ngine Worlds — community-driven sandbox.</p>
+        </div>
+        <nav class="nw-footer__nav">
+            <a href="/about">About</a>
+            <a href="/devlog">Devlog</a>
+            <a href="/forum">Forum</a>
+            <a href="/contact">Contact</a>
+        </nav>
+        <div class="nw-footer__socials">
+            <a href="https://discord.gg/WZtkFww62d"
+               target="_blank"
+               rel="noopener noreferrer">Discord</a>
+            <a href="#youtube">YouTube</a>
+            <a href="#steam">Steam</a>
+            <a href="#github">GitHub</a>
+        </div>
+    </div>
+</footer>

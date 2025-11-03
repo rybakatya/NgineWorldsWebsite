@@ -1,0 +1,20 @@
+﻿@page "/devlog"
+@if(loading == true)
+{
+	<LoadingOverlay Visible="@loading" Message="Loading, please wait…" SizePx="64" ThicknessPx="6" DimBackground="true" />
+}
+else
+{
+	
+}
+
+
+@code {
+	private bool loading = true;
+
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+
+	}
+}

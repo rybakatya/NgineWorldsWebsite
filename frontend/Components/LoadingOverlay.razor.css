@@ -1,0 +1,59 @@
+﻿/* Screen-wide centered positioning */
+.nw-loader {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none; /* clicks fall through when only the spinner is shown */
+}
+
+/* Optional dimmed backdrop */
+.nw-loader__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 9998;
+    backdrop-filter: blur(1px);
+}
+
+/* Spinner */
+.nw-loader__spinner {
+    width: var(--nw-loader-size, 56px);
+    height: var(--nw-loader-size, 56px);
+    border-radius: 50%;
+    border: var(--nw-loader-thickness, 6px) solid rgba(127, 127, 127, 0.25);
+    border-top-color: #7c3aed; /* accent */
+    animation: nw-spin 0.9s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes nw-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Optional text */
+.nw-loader__text {
+    font-size: 0.95rem;
+    color: #e5e7eb; /* light gray */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    user-select: none;
+}
+
+/* Screen-reader only text */
+.sr-only {
+    position: absolute !important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
+    border: 0;
+    padding: 0;
+    margin: -1px;
+}

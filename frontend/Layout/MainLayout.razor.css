@@ -1,77 +1,154 @@
+/* --- Make only the content area scroll, not the whole window --- */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    overflow: hidden;
+}
+/* window scrollbar hidden; .page will scroll */
+
+/* Grid layout: top row = nav (auto height), bottom row = scrollable content */
+.layout-root {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+/* --- Your existing topnav styles (kept) --- */
+ul.topnav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible; /* so dropdown can overflow */
+    background-color: #2C2C3F;
+    text-align: right;
+    font-family: 'Noto Sans', sans-serif;
+    background: #2c2c3f;
+    filter: drop-shadow(0px 0px 3px rgb(21, 21, 21));
+    position: sticky; /* stays at top as content scrolls */
+    top: 0;
+    z-index: 1000;
+    display: block;
+}
+
+    ul.topnav li {
+        display: inline-block;
+    }
+
+        ul.topnav li a {
+            display: block;
+            color: rgb(255, 255, 255);
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            font-family: 'Noto Sans', sans-serif;
+            padding: 14px 16px; /* your existing padding = keeps your current height */
+            text-decoration: none;
+        }
+
+            ul.topnav li a:hover {
+                background-color: #111;
+            }
+
+/* --- The content area now owns the scrollbar (appears under nav) --- */
 .page {
+    overflow: auto; /* scrollbar shows here */
+    min-height: 0; /* prevents grid child from forcing extra height */
+}
+
+/* Ensure the dropdown anchors don’t inherit your topnav link layout */
+.topnav li.profile {
     position: relative;
+}
+
+/* Dropdown panel */
+.topnav .menu {
+    position: absolute;
+    top: calc(100% + 15px);
+    right: 0;
+    min-width: 220px;
+    background: #2c2c3f;
+    color: var(--nw-on-surface, #fff);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.2);
+    padding: 6px;
+    transform-origin: top right;
+    animation: menuIn 160ms ease-out;
+    z-index: 1001; /* above nav and content */
     display: flex;
     flex-direction: column;
+    gap: 6px;
+    text-align: left;
 }
 
-main {
-    flex: 1;
+    /* Items inside the dropdown (override nav link rules) */
+    .topnav .menu a,
+    .topnav .menu button {
+        all: unset; /* wipe inherited button/a styles */
+        display: block;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        line-height: 1.2;
+        cursor: pointer;
+        color: inherit;
+        text-align: left;
+    }
+
+        .topnav .menu a:hover,
+        .topnav .menu button:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .topnav .menu button.danger:hover {
+            background: rgba(244, 63, 94, 0.12);
+            color: #f43f5e;
+        }
+
+        .topnav .menu a:focus-visible,
+        .topnav .menu button:focus-visible {
+            outline: 2px solid rgba(124,58,237,0.9);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+
+        .topnav .menu button.danger:active {
+            background: rgba(244,63,94,0.22);
+        }
+
+/* Avatar button */
+.avatar-btn {
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 9999px;
 }
 
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    .avatar-btn:hover {
+        background: rgba(124,58,237,0.12);
+    }
+
+/* Backdrop to close on outside click */
+.menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 1000;
 }
 
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
-    height: 3.5rem;
-    display: flex;
-    align-items: center;
-}
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
+/* Pop animation */
+@keyframes menuIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
     }
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
-
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
-    }
-}
-
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
-    }
-
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
-
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }

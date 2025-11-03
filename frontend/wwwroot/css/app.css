@@ -1,8 +1,40 @@
 ﻿html, body {
     height: 100%;
     margin: 0; /* remove default browser margin */
-    background: #292929; /* ← pick your color */
+    background: #201E30; /* ← pick your color */
     color: #e6e6e6; /* optional: default text color */
+    overflow-x: hidden;
+}
+
+* {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-text-size-adjust: 100%;
+}
+    *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: #15141d; /* scrollbar background */
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background-color: #201E30; /* scrollbar thumb */
+        border-radius: 6px;
+        border: 2px solid #15141d; /* space around thumb */
+    }
+
+        *::-webkit-scrollbar-thumb:hover {
+            background-color: #2c2944; /* lighter on hover */
+        }
+
+/* Works on Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #201E30 #15141d; /* thumb color, track color */
 }
 
 #blazor-error-ui {
@@ -82,23 +114,19 @@ main:focus {
     outline: none;
     box-shadow: none;
 }
+@import url('https://fonts.googleapis.com/css?family=Roboto');
 
-
-/* ===== Ngine Worlds Navbar (Blazor CSS isolation) ===== */
-:root {
-    --nw-surface: #212121; /* bar background */
-    --nw-surface-2: #0c0f13; /* hover layer / mobile panel */
-    --nw-text: #e6e6e6;
-    --nw-muted: #a4afc0;
-    --nw-accent: #6ea8fe; /* active link */
-    --nw-border: #232a36;
-    color-scheme: dark;
+body {
+    font-family: 'Noto Sans', sans-serif;
+    margin: 0
 }
 
-.auth-error {
-    margin: 1rem auto 0;
-    max-width: 520px;
-    color: #ff6b6b;
-    text-align: center;
-    font-size: 0.95rem;
+* {
+    margin: 0;
+    padding: 0
 }
+
+i {
+    margin-right: 10px
+}
+

@@ -1,1 +1,0 @@
-﻿public readonly record struct NavLinkItem(string Text, string Href);

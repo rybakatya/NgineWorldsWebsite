@@ -1,148 +1,113 @@
 using System.Text;
-using AuthApi;
-using AuthApi.Data;
-using AuthApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models; // <-- add this
+using Microsoft.OpenApi.Models;
+using SiteAPI.Data;
+using SiteAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------- EF Core 9 + Pomelo 9 (MySQL) ----------
-var conn = builder.Configuration.GetConnectionString("DefaultConnection")
-           ?? throw new InvalidOperationException("Missing ConnectionStrings:DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(o =>
-    o.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+// DbContext (MySQL)
+var cs = builder.Configuration.GetConnectionString("Default");
+builder.Services.AddDbContext<AppDbContext>(opts =>
+{
+    opts.UseMySql(cs, ServerVersion.AutoDetect(cs));
+});
 
-// ---------- Identity (users/roles) ----------
+// Auth: JWT bearer (read token from cookie OR Authorization header)
+var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
 builder.Services
-    .AddIdentityCore<ApplicationUser>(opts =>
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        opts.User.RequireUniqueEmail = true;
-        opts.Password.RequiredLength = 6;
-        opts.Password.RequireNonAlphanumeric = false;
-    })
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
-
-// ---------- JWT ----------
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-var jwt = builder.Configuration.GetSection("Jwt");
-var key = jwt["Key"] ?? throw new InvalidOperationException("Missing Jwt:Key");
-var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(o =>
-    {
-        o.TokenValidationParameters = new TokenValidationParameters
+        options.TokenValidationParameters = new()
         {
             ValidateIssuer = true,
             ValidateAudience = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwt["Issuer"],
-            ValidAudience = jwt["Audience"],
-            IssuerSigningKey = signingKey,
-            ClockSkew = TimeSpan.Zero
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
 
-        o.Events = new JwtBearerEvents
+        // Look in HttpOnly cookie for JWT (still accepts Authorization header by default)
+        options.Events = new JwtBearerEvents
         {
-            OnMessageReceived = context =>
+            OnMessageReceived = ctx =>
             {
-                if (context.Request.Cookies.TryGetValue(AuthConstants.AuthCookieName, out var token) &&
-                    !string.IsNullOrEmpty(token))
+                var cookieName = builder.Configuration["Jwt:CookieName"];
+                if (!string.IsNullOrEmpty(cookieName) &&
+                    ctx.Request.Cookies.TryGetValue(cookieName, out var token))
                 {
-                    context.Token = token;
+                    ctx.Token = token;
                 }
-
                 return Task.CompletedTask;
             }
         };
     });
 
 builder.Services.AddAuthorization();
-
-// App services
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddHostedService<RoleSeeder>();
-
 builder.Services.AddControllers();
 
-// ---------- Swagger (with JWT support) ----------
+// CORS for dev (same-origin setup). Tighten for production.
+builder.Services.AddCors(opts =>
+{
+    opts.AddPolicy("same-origin", p =>
+        p.AllowAnyHeader().AllowAnyMethod().AllowCredentials().SetIsOriginAllowed(_ => true));
+});
+
+// Swagger + Bearer support
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Auth API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "MyApi", Version = "v1" });
 
-    // Define the Bearer scheme
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    var scheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter: Bearer {your JWT token}"
-    });
+        Description = "Paste token as: Bearer {your JWT}"
+    };
+    c.AddSecurityDefinition("Bearer", scheme);
 
-    // Apply it globally so all endpoints send the header once you click Authorize
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"   // <-- must match the definition name above
-                }
-            },
+            new OpenApiSecurityScheme { Reference = new OpenApiReference
+                { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
             Array.Empty<string>()
         }
     });
 });
 
+builder.Services.AddSingleton<TokenService>();
+
 var app = builder.Build();
 
-// Apply migrations at startup (dev convenience)
-using (var scope = app.Services.CreateScope())
+app.UseHttpsRedirection();
+app.UseCors("same-origin");
+
+// Swagger only in Development
+if (app.Environment.IsDevelopment())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-// ---------- Use Swagger ----------
-app.UseSwagger();      // serves /swagger/v1/swagger.json
-app.UseSwaggerUI();    // serves interactive UI at /swagger
+// IMPORTANT: these two lines serve the WASM static files from the referenced Client project
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-// These two lines make the API serve the Clients static web assets
-app.UseBlazorFrameworkFiles();   // serves _framework from the Client project
-app.UseStaticFiles();            // serves wwwroot (images, css, etc.)
-
 app.MapControllers();
-// SPA fallback to Client/index.html
+// Fallback to the Blazor index.html for SPA routes
 app.MapFallbackToFile("index.html");
+
 app.Run();
-
-// ---------- Optional role seeder ----------
-class RoleSeeder : IHostedService
-{
-    private readonly IServiceProvider _sp;
-    public RoleSeeder(IServiceProvider sp) => _sp = sp;
-
-    public async Task StartAsync(CancellationToken ct)
-    {
-        using var scope = _sp.CreateScope();
-        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        foreach (var role in new[] { "Admin", "User" })
-            if (!await roles.RoleExistsAsync(role))
-                await roles.CreateAsync(new IdentityRole(role));
-    }
-
-    public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
-}

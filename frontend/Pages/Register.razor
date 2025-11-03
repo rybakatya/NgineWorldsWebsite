@@ -1,51 +1,7 @@
-@page "/register"
-@using Contracts.Auth
-@inject HttpClient Http
-@inject NavigationManager Nav
-@inject frontend.Services.AuthService Auth
+﻿@page "/register"
 
-<AuthCard Kind="AuthCard.AuthKind.Register"
-          Title="Register"
-          ButtonText="Submit"
-          OnSubmit="SubmitRegister" />
 
-@if (!string.IsNullOrWhiteSpace(_errorMessage))
-{
-    <p class="auth-error">@_errorMessage</p>
-}
 
 @code {
-    private string? _errorMessage;
 
-    private async Task SubmitRegister(AuthCard.AuthCardModel model)
-    {
-        _errorMessage = null;
-
-        var response = await Http.PostAsJsonAsync("api/auth/register", new RegisterDto
-        {
-            Email = model.Email,
-            Password = model.Password,
-            Username = model.Username,
-            Role = "Admin"
-        });
-
-        if (response.IsSuccessStatusCode)
-        {
-            var body = await response.Content.ReadFromJsonAsync<AuthResponse>();
-            if (body is not null)
-            {
-                await Auth.SignInAsync(body);
-                Nav.NavigateTo("/");
-                return;
-            }
-
-            _errorMessage = "Unable to complete registration. Please try again.";
-            return;
-        }
-
-        var errorContent = await response.Content.ReadAsStringAsync();
-        _errorMessage = string.IsNullOrWhiteSpace(errorContent)
-            ? "Unable to complete registration. Please try again."
-            : errorContent;
-    }
 }

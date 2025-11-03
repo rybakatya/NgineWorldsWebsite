@@ -1,0 +1,34 @@
+﻿@inherits ComponentBase
+
+@if (Visible)
+{
+    <div class="nw-loader__backdrop" aria-hidden="@(!DimBackground)"></div>
+
+    <div class="nw-loader" role="status" aria-live="polite" aria-busy="true">
+        <div class="nw-loader__spinner"
+             style="--nw-loader-size:@($"{SizePx}px"); --nw-loader-thickness:@($"{ThicknessPx}px");">
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <div class="nw-loader__text">@Message</div>
+        }
+        <span class="sr-only">Loading…</span>
+    </div>
+}
+
+@code {
+    /// <summary>Show / hide the overlay.</summary>
+    [Parameter] public bool Visible { get; set; } = true;
+
+    /// <summary>Optional message under the spinner.</summary>
+    [Parameter] public string? Message { get; set; }
+
+    /// <summary>Spinner diameter in pixels.</summary>
+    [Parameter] public int SizePx { get; set; } = 56;
+
+    /// <summary>Spinner ring thickness in pixels.</summary>
+    [Parameter] public int ThicknessPx { get; set; } = 6;
+
+    /// <summary>Dim the background with a translucent backdrop.</summary>
+    [Parameter] public bool DimBackground { get; set; } = true;
+}

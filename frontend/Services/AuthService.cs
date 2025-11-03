@@ -1,138 +1,94 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
-using System.Text.Json;
-using System.Linq;
+﻿// Client/Services/ApiClient.cs
+using System.Net.Http.Json;
 using Contracts.Auth;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
-namespace frontend.Services;
+namespace Services;
 
-public sealed class AuthService
+public class AuthService
 {
-    private const string StorageKey = "auth_token";
-
+    
     private readonly HttpClient _http;
-    private readonly IJSRuntime _js;
-    private readonly NavigationManager _navigation;
+    public AuthService(HttpClient http) => _http = http;
 
-    private AuthState _state = AuthState.SignedOut;
+    private static void IncludeCookies(HttpRequestMessage req) =>
+        req.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+   
+    public Action<bool, Roles> onAuthStatusChanged;
 
-    public AuthService(HttpClient http, IJSRuntime js, NavigationManager navigation)
+
+
+    public async Task<(bool success, MeResponse content)> LoginAsync(string nameOrEmail, string password)
     {
-        _http = http;
-        _js = js;
-        _navigation = navigation;
+        var req = new HttpRequestMessage(HttpMethod.Post, "api/auth/login")
+        {
+            Content = JsonContent.Create(new { usernameOrEmail = nameOrEmail, password })
+        };
+        IncludeCookies(req);
+        var res = await _http.SendAsync(req);
+        var content = await res.Content.ReadFromJsonAsync<MeResponse>();
+        
+        if(content == null)
+        {
+            throw new Exception("Login response was null!");
+        }
+        
+        if (onAuthStatusChanged != null)
+            onAuthStatusChanged(res.IsSuccessStatusCode, content.Roles);
+
+
+        return (res.IsSuccessStatusCode, content);
     }
 
-    public event Action? AuthenticationStateChanged;
-
-    public AuthState State => _state;
-
-    public bool IsAuthenticated => _state.IsAuthenticated;
-
-    public async Task InitializeAsync()
+    public async Task<(bool success, string content)> LogoutAsync()
     {
-        var stored = await _js.InvokeAsync<string?>("localStorage.getItem", StorageKey);
-        if (string.IsNullOrWhiteSpace(stored))
-        {
-            return;
-        }
+        var req = new HttpRequestMessage(HttpMethod.Post, "api/auth/logout");
+        IncludeCookies(req);
+        var res = await _http.SendAsync(req);
+        var body = await res.Content.ReadAsStringAsync();
+        
+        
 
-        try
-        {
-            var response = JsonSerializer.Deserialize<AuthResponse>(stored);
-            if (response is null)
-            {
-                await ClearStoredAsync();
-                return;
-            }
-
-            if (!TryCreateState(response, out var state))
-            {
-                await ClearStoredAsync();
-                return;
-            }
-
-            _state = state;
-            AuthenticationStateChanged?.Invoke();
-        }
-        catch
-        {
-            await ClearStoredAsync();
-        }
+        if (onAuthStatusChanged != null)
+            onAuthStatusChanged(!res.IsSuccessStatusCode, Roles.None);
+        return (res.IsSuccessStatusCode, body);
     }
 
-    public async Task SignInAsync(AuthResponse response)
+    public async Task<(bool success, MeResponse content)> RegisterAsync(string username, string email, string password)
     {
-        if (!TryCreateState(response, out var state))
+        var req = new HttpRequestMessage(HttpMethod.Post, "api/auth/register")
         {
-            throw new InvalidOperationException("Unable to parse authentication token.");
+            Content = JsonContent.Create(new { username, email, password })
+        };
+        IncludeCookies(req);
+        var res = await _http.SendAsync(req);
+        var content = await res.Content.ReadFromJsonAsync<MeResponse>();
+
+        if (content == null)
+        {
+            throw new Exception("Register response was null!");
         }
 
-        var json = JsonSerializer.Serialize(response);
-        await _js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-
-        _state = state;
-        AuthenticationStateChanged?.Invoke();
+        if (onAuthStatusChanged != null)
+            onAuthStatusChanged(res.IsSuccessStatusCode, content.Roles);
+        return (res.IsSuccessStatusCode, content);
     }
 
-    public async Task SignOutAsync()
+    public async Task<(bool success, MeResponse content)> MeAsync()
     {
-        try
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+        IncludeCookies(req);
+        var res = await _http.SendAsync(req);
+
+        var body = await res.Content.ReadFromJsonAsync<MeResponse>();
+
+        if (body == null)
         {
-            // Invalidate the server-side auth cookie if possible.
-            var response = await _http.PostAsync("api/auth/logout", null);
-            response.EnsureSuccessStatusCode();
-        }
-        catch
-        {
-            // Best-effort; even if the request fails we still clear client state.
+            throw new Exception("Me response was null!");
         }
 
-        await ClearStoredAsync();
-        _state = AuthState.SignedOut;
-        AuthenticationStateChanged?.Invoke();
-
-        _navigation.NavigateTo("/");
+        if (onAuthStatusChanged != null)
+            onAuthStatusChanged(res.IsSuccessStatusCode, body.Roles);
+        return (res.IsSuccessStatusCode, body);
     }
-
-    private async Task ClearStoredAsync()
-    {
-        await _js.InvokeVoidAsync("localStorage.removeItem", StorageKey);
-    }
-
-    private static bool TryCreateState(AuthResponse response, out AuthState state)
-    {
-        var handler = new JwtSecurityTokenHandler();
-        try
-        {
-            var jwt = handler.ReadJwtToken(response.AccessToken);
-            var expires = jwt.ValidTo == DateTime.MinValue
-                ? (DateTimeOffset?)null
-                : new DateTimeOffset(DateTime.SpecifyKind(jwt.ValidTo, DateTimeKind.Utc));
-
-            if (expires is { } exp && exp <= DateTimeOffset.UtcNow)
-            {
-                state = AuthState.SignedOut;
-                return false;
-            }
-
-            var nameClaim = jwt.Claims.FirstOrDefault(c =>
-                c.Type is "name" or "unique_name" or "preferred_username" or "email" or JwtRegisteredClaimNames.Sub);
-
-            state = new AuthState(true, response, expires, nameClaim?.Value);
-            return true;
-        }
-        catch
-        {
-            state = AuthState.SignedOut;
-            return false;
-        }
-    }
-}
-
-public record AuthState(bool IsAuthenticated, AuthResponse? Response, DateTimeOffset? ExpiresAt, string? DisplayName)
-{
-    public static AuthState SignedOut { get; } = new(false, null, null, null);
 }
